@@ -53,6 +53,7 @@
 
             <div class="controls">
                 <button id="sudoku-new" type="button">新游戏</button>
+                <button id="sudoku-settings" type="button">设置</button>
             </div>
 
             <section id="sboard" class="sboard" aria-label="数独棋盘">
@@ -71,6 +72,22 @@
             </div>
 
             <p class="hint">点格子 → 点下方数字键入 · 「笔记」记候选 · 题库来自 Kaggle 3M Sudoku</p>
+
+            <div id="settings" class="settings-modal hidden">
+                <div class="settings-panel">
+                    <h2 class="settings-title">设置</h2>
+                    <label class="setting-row">
+                        <span>提示容易锁定的格子</span>
+                        <input type="checkbox" id="opt-lock" class="switch">
+                    </label>
+                    <p class="setting-note">仅一种填法标圆形 · 两种标方形 · 三种标三角</p>
+                    <label class="setting-row">
+                        <span>以斜体展示提示数</span>
+                        <input type="checkbox" id="opt-italic" class="switch">
+                    </label>
+                    <button id="settings-done" type="button">完成</button>
+                </div>
+            </div>
         </section>
     </main>
 

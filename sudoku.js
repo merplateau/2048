@@ -2,6 +2,7 @@
 'use strict';
 
 const STORAGE_KEY = 'sudoku-state';
+const SETTINGS_KEY = 'sudoku-settings';
 const N = 81;
 
 const root = document.documentElement;
@@ -15,6 +16,11 @@ const notesBtn = document.getElementById('s-notes');
 const overlay = document.getElementById('soverlay');
 const overlayText = document.getElementById('soverlay-text');
 const overlayBtn = document.getElementById('soverlay-btn');
+const settingsBtn = document.getElementById('sudoku-settings');
+const settingsModal = document.getElementById('settings');
+const settingsDone = document.getElementById('settings-done');
+const optLock = document.getElementById('opt-lock');
+const optItalic = document.getElementById('opt-italic');
 
 const LEVELS = (window.SUDOKU_PUZZLES && window.SUDOKU_PUZZLES.levels) || [];
 const DEFAULT_LEVEL = 'easy';
@@ -29,6 +35,8 @@ let level;        // current level key
 let solved;
 let history;      // [{ values, notes }]
 let cellEls = [];
+let settings = { lockHint: false, italicClues: false };
+let settingsOpen = false;
 
 /* ---------- index helpers ---------- */
 
@@ -100,6 +108,7 @@ function layout() {
     root.style.setProperty('--sboard-size', size + 'px');
     root.style.setProperty('--sval-size', Math.round(cell * 0.5) + 'px');
     root.style.setProperty('--snote-size', Math.max(8, Math.round(cell * 0.21)) + 'px');
+    root.style.setProperty('--lock-size', Math.round(cell * 0.52) + 'px');
 }
 
 /* ---------- conflicts ---------- */
@@ -124,11 +133,36 @@ function countDigit(d) {
     return n;
 }
 
+// digits already used in each row / col / box, for candidate calculation
+function usedDigits() {
+    const rows = Array.from({ length: 9 }, () => new Set());
+    const cols = Array.from({ length: 9 }, () => new Set());
+    const boxes = Array.from({ length: 9 }, () => new Set());
+    for (let i = 0; i < N; i++) {
+        if (!values[i]) continue;
+        rows[rowOf(i)].add(values[i]);
+        cols[colOf(i)].add(values[i]);
+        boxes[boxOf(i)].add(values[i]);
+    }
+    return { rows, cols, boxes };
+}
+
+function canPlace(i, d, used) {
+    return !used.rows[rowOf(i)].has(d) && !used.cols[colOf(i)].has(d) && !used.boxes[boxOf(i)].has(d);
+}
+
+function candidateCount(i, used) {
+    let c = 0;
+    for (let d = 1; d <= 9; d++) if (canPlace(i, d, used)) c++;
+    return c;
+}
+
 /* ---------- render ---------- */
 
 function render() {
     const bad = conflictSet();
     const selVal = selected >= 0 ? values[selected] : 0;
+    const used = usedDigits();
 
     for (let i = 0; i < N; i++) {
         const el = cellEls[i];
@@ -138,10 +172,17 @@ function render() {
         if (selVal && values[i] === selVal) cls += ' same';
         if (i === selected) cls += ' sel';
         if (bad.has(i)) cls += ' conflict';
+        // lock hint: empty cells with very few legal candidates
+        if (settings.lockHint && !values[i] && !given[i]) {
+            const n = candidateCount(i, used);
+            if (n === 1) cls += ' lock1';
+            else if (n === 2) cls += ' lock2';
+            else if (n === 3) cls += ' lock3';
+        }
         el.className = cls;
 
         if (values[i]) {
-            el.textContent = values[i];
+            el.innerHTML = '<span class="val">' + values[i] + '</span>';
         } else if (notes[i] && notes[i].length) {
             const set = notes[i];
             let html = '<div class="notes">';
@@ -153,9 +194,13 @@ function render() {
         }
     }
 
-    // dim digits that are fully placed
+    // dim digits that are fully placed, and (for the selected empty cell)
+    // gray out digits that can't legally go there — still tappable, just a hint
+    const selEmpty = selected >= 0 && !values[selected] && !given[selected];
     for (const b of padEl.children) {
-        b.classList.toggle('done', countDigit(Number(b.dataset.d)) >= 9);
+        const d = Number(b.dataset.d);
+        b.classList.toggle('done', countDigit(d) >= 9);
+        b.classList.toggle('blocked', selEmpty && !canPlace(selected, d, used));
     }
 
     notesBtn.classList.toggle('active', notesMode);
@@ -240,6 +285,13 @@ function moveSelection(dr, dc) {
 
 function handleKey(e) {
     const k = e.key;
+    if (settingsOpen) {
+        if (k === 'Escape') {
+            e.preventDefault();
+            closeSettings();
+        }
+        return;
+    }
     if (k >= '1' && k <= '9') {
         e.preventDefault();
         inputDigit(Number(k));
@@ -354,6 +406,41 @@ function undo() {
     save();
 }
 
+/* ---------- settings ---------- */
+
+function loadSettings() {
+    try {
+        const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+        if (s) settings = { lockHint: !!s.lockHint, italicClues: !!s.italicClues };
+    } catch (e) {
+        /* ignore */
+    }
+}
+
+function saveSettings() {
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    } catch (e) {
+        /* ignore */
+    }
+}
+
+function applySettings() {
+    optLock.checked = settings.lockHint;
+    optItalic.checked = settings.italicClues;
+    boardEl.classList.toggle('italic-clues', settings.italicClues);
+}
+
+function openSettings() {
+    settingsOpen = true;
+    settingsModal.classList.remove('hidden');
+}
+
+function closeSettings() {
+    settingsOpen = false;
+    settingsModal.classList.add('hidden');
+}
+
 /* ---------- wiring ---------- */
 
 buildBoard();
@@ -365,8 +452,27 @@ undoBtn.addEventListener('click', undo);
 eraseBtn.addEventListener('click', erase);
 notesBtn.addEventListener('click', toggleNotes);
 overlayBtn.addEventListener('click', () => newPuzzle(level));
+
+settingsBtn.addEventListener('click', openSettings);
+settingsDone.addEventListener('click', closeSettings);
+settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) closeSettings();
+});
+optLock.addEventListener('change', () => {
+    settings.lockHint = optLock.checked;
+    saveSettings();
+    render();
+});
+optItalic.addEventListener('change', () => {
+    settings.italicClues = optItalic.checked;
+    saveSettings();
+    applySettings();
+});
+
 window.addEventListener('resize', layout);
 
+loadSettings();
+applySettings();
 if (!restore()) {
     newPuzzle(DEFAULT_LEVEL);
 }

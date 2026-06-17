@@ -9,6 +9,7 @@
     --active: #0f6bff;
     --gap: 12px;
     --radius: 4px;
+    --lock-fill: rgba(15, 107, 255, 0.16);
 }
 
 * {
@@ -333,6 +334,55 @@ h1 {
     font-weight: 800;
 }
 
+.sboard.italic-clues .scell.given {
+    font-family: Georgia, "Times New Roman", "Songti SC", serif;
+    font-style: italic;
+    font-weight: 700;
+}
+
+/* lock-hint shapes: drawn behind the cell contents */
+.scell.lock1::before,
+.scell.lock2::before,
+.scell.lock3::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.scell .val {
+    position: relative;
+    z-index: 1;
+}
+
+.scell.lock1::before {
+    width: var(--lock-size, 22px);
+    height: var(--lock-size, 22px);
+    border-radius: 50%;
+    background: var(--lock-fill);
+}
+
+.scell.lock2::before {
+    width: calc(var(--lock-size, 22px) * 0.9);
+    height: calc(var(--lock-size, 22px) * 0.9);
+    background: var(--lock-fill);
+}
+
+.scell.lock3::before {
+    width: 0;
+    height: 0;
+    border-left: calc(var(--lock-size, 22px) * 0.55) solid transparent;
+    border-right: calc(var(--lock-size, 22px) * 0.55) solid transparent;
+    border-bottom: calc(var(--lock-size, 22px) * 0.95) solid var(--lock-fill);
+    transform: translate(-50%, -40%);
+}
+
+.scell .notes {
+    z-index: 1;
+}
+
 /* highlight order: peer < same < sel so selection wins */
 .scell.peer { background: #eef1f5; }
 .scell.same { background: #d8e4fb; }
@@ -387,6 +437,12 @@ h1 {
     background: #fafafa;
 }
 
+/* digit can't legally go in the selected cell — hint only, still tappable */
+.pad button.blocked {
+    color: #c4c4c4;
+    background: #f0f0f0;
+}
+
 .sactions {
     width: var(--sboard-size, 460px);
     max-width: calc(100vw - 32px);
@@ -418,4 +474,99 @@ h1 {
     color: #bbb;
     cursor: default;
     background: #fff;
+}
+
+/* ----- settings modal ----- */
+
+.settings-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(20, 20, 20, 0.32);
+}
+
+.settings-panel {
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+    background: var(--paper, #fff);
+    border: 1px solid var(--line);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.settings-title {
+    margin: 0 0 2px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.setting-note {
+    margin: -10px 0 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.settings-panel button {
+    height: 40px;
+    border: 1px solid #222;
+    background: #222;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.settings-panel button:hover {
+    background: #000;
+}
+
+/* toggle switch */
+.switch {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 26px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: #e4e4e4;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: left 0.15s ease;
+}
+
+.switch:checked {
+    background: var(--active);
+    border-color: var(--active);
+}
+
+.switch:checked::after {
+    left: 22px;
 }
