@@ -488,6 +488,11 @@ h1 {
     background: rgba(20, 20, 20, 0.32);
 }
 
+/* must override .settings-modal's display since it's declared later */
+.settings-modal.hidden {
+    display: none;
+}
+
 .settings-panel {
     width: 320px;
     max-width: calc(100vw - 40px);
