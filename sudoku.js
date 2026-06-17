@@ -21,6 +21,11 @@ const settingsModal = document.getElementById('settings');
 const settingsDone = document.getElementById('settings-done');
 const optLock = document.getElementById('opt-lock');
 const optItalic = document.getElementById('opt-italic');
+const switchModal = document.getElementById('switch-modal');
+const switchDesc = document.getElementById('switch-desc');
+const optSave = document.getElementById('opt-save');
+const switchConfirm = document.getElementById('switch-confirm');
+const switchCancel = document.getElementById('switch-cancel');
 
 const LEVELS = (window.SUDOKU_PUZZLES && window.SUDOKU_PUZZLES.levels) || [];
 const DEFAULT_LEVEL = 'easy';
@@ -37,6 +42,9 @@ let history;      // [{ values, notes }]
 let cellEls = [];
 let settings = { lockHint: false, italicClues: false };
 let settingsOpen = false;
+let games = {};            // saved game per level key
+let pendingLevel = null;   // target level awaiting switch confirmation
+let switchOpen = false;
 
 /* ---------- index helpers ---------- */
 
@@ -87,8 +95,11 @@ function buildDifficulty() {
         b.textContent = lv.name;
         b.dataset.level = lv.key;
         b.addEventListener('click', () => {
-            if (lv.key !== level || solved) newPuzzle(lv.key);
-            else markActiveLevel();
+            if (lv.key === level) {
+                markActiveLevel();
+                return;
+            }
+            requestSwitch(lv.key);
         });
         diffEl.appendChild(b);
     });
@@ -285,10 +296,11 @@ function moveSelection(dr, dc) {
 
 function handleKey(e) {
     const k = e.key;
-    if (settingsOpen) {
+    if (settingsOpen || switchOpen) {
         if (k === 'Escape') {
             e.preventDefault();
-            closeSettings();
+            if (settingsOpen) closeSettings();
+            else closeSwitch();
         }
         return;
     }
@@ -330,15 +342,43 @@ function checkWin() {
 
 /* ---------- persistence ---------- */
 
+function gameState() {
+    return { solution, given, values, notes, selected, notesMode, solved };
+}
+
 function save() {
+    games[level] = gameState();
     try {
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({ level, solution, given, values, notes, selected, notesMode, solved })
-        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ level, games }));
     } catch (e) {
         /* ignore */
     }
+}
+
+function showSolvedOverlay() {
+    if (solved) {
+        const lv = LEVELS.find((l) => l.key === level);
+        overlayText.textContent = '完成 · ' + (lv ? lv.name : '');
+        overlay.classList.remove('hidden');
+    } else {
+        overlay.classList.add('hidden');
+    }
+}
+
+function loadGame(s) {
+    solution = s.solution || '';
+    given = s.given;
+    values = s.values;
+    notes = Array.isArray(s.notes) ? s.notes.map((a) => (Array.isArray(a) ? a : [])) : Array.from({ length: N }, () => []);
+    selected = typeof s.selected === 'number' ? s.selected : -1;
+    notesMode = !!s.notesMode;
+    solved = !!s.solved;
+    history = [];
+    showSolvedOverlay();
+}
+
+function validGame(s) {
+    return s && Array.isArray(s.values) && s.values.length === N;
 }
 
 function restore() {
@@ -348,24 +388,42 @@ function restore() {
     } catch (e) {
         s = null;
     }
-    if (!s || !Array.isArray(s.values) || s.values.length !== N) return false;
-    level = s.level || DEFAULT_LEVEL;
-    solution = s.solution || '';
-    given = s.given;
-    values = s.values;
-    notes = Array.isArray(s.notes) ? s.notes.map((a) => (Array.isArray(a) ? a : [])) : Array.from({ length: N }, () => []);
-    selected = typeof s.selected === 'number' ? s.selected : -1;
-    notesMode = !!s.notesMode;
-    solved = !!s.solved;
-    history = [];
-    if (solved) {
-        const lv = LEVELS.find((l) => l.key === level);
-        overlayText.textContent = '完成 · ' + (lv ? lv.name : '');
-        overlay.classList.remove('hidden');
-    } else {
-        overlay.classList.add('hidden');
+    if (!s) return false;
+
+    // current per-level format
+    if (s.games && typeof s.games === 'object') {
+        games = {};
+        for (const k in s.games) if (validGame(s.games[k])) games[k] = s.games[k];
+        let lv = s.level && games[s.level] ? s.level : null;
+        if (!lv) {
+            const first = LEVELS.find((l) => games[l.key]);
+            lv = first ? first.key : null;
+        }
+        if (lv) {
+            level = lv;
+            loadGame(games[lv]);
+            return true;
+        }
+        return false;
     }
-    return true;
+
+    // legacy flat format -> migrate
+    if (validGame(s)) {
+        level = s.level || DEFAULT_LEVEL;
+        games = {};
+        games[level] = {
+            solution: s.solution,
+            given: s.given,
+            values: s.values,
+            notes: s.notes,
+            selected: s.selected,
+            notesMode: s.notesMode,
+            solved: s.solved,
+        };
+        loadGame(games[level]);
+        return true;
+    }
+    return false;
 }
 
 /* ---------- new puzzle ---------- */
@@ -404,6 +462,43 @@ function undo() {
     overlay.classList.add('hidden');
     render();
     save();
+}
+
+/* ---------- difficulty switching (with confirmation) ---------- */
+
+function requestSwitch(targetKey) {
+    pendingLevel = targetKey;
+    const lv = LEVELS.find((l) => l.key === targetKey);
+    const hasSaved = !!games[targetKey];
+    switchDesc.textContent =
+        '切换到「' + (lv ? lv.name : '') + '」' + (hasSaved ? ' · 将进入上次的对局' : ' · 将开始新对局');
+    optSave.checked = true;
+    switchOpen = true;
+    switchModal.classList.remove('hidden');
+}
+
+function confirmSwitch() {
+    const target = pendingLevel;
+    closeSwitch();
+    if (!target || target === level) return;
+
+    if (optSave.checked) games[level] = gameState();
+    else delete games[level];
+
+    if (games[target]) {
+        level = target;
+        loadGame(games[target]);
+        save();
+        render();
+    } else {
+        newPuzzle(target);
+    }
+}
+
+function closeSwitch() {
+    switchOpen = false;
+    pendingLevel = null;
+    switchModal.classList.add('hidden');
 }
 
 /* ---------- settings ---------- */
@@ -467,6 +562,12 @@ optItalic.addEventListener('change', () => {
     settings.italicClues = optItalic.checked;
     saveSettings();
     applySettings();
+});
+
+switchConfirm.addEventListener('click', confirmSwitch);
+switchCancel.addEventListener('click', closeSwitch);
+switchModal.addEventListener('click', (e) => {
+    if (e.target === switchModal) closeSwitch();
 });
 
 window.addEventListener('resize', layout);

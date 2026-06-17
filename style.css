@@ -539,6 +539,25 @@ h1 {
     background: #000;
 }
 
+.modal-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.modal-actions button {
+    flex: 1;
+}
+
+.settings-panel button.btn-ghost {
+    background: #fff;
+    color: #111;
+    border-color: var(--line);
+}
+
+.settings-panel button.btn-ghost:hover {
+    background: #f0f0f0;
+}
+
 /* toggle switch */
 .switch {
     appearance: none;
