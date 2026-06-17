@@ -45,6 +45,17 @@
             </section>
 
             <p class="hint">方向键或滑动屏幕移动方块 · 相同数字合并 · 可随时撤回</p>
+
+            <div id="g-new-modal" class="settings-modal hidden">
+                <div class="settings-panel">
+                    <h2 class="settings-title">新游戏</h2>
+                    <p class="setting-note">将放弃当前对局，重新开始。</p>
+                    <div class="modal-actions">
+                        <button id="g-new-cancel" type="button" class="btn-ghost">取消</button>
+                        <button id="g-new-confirm" type="button">确认</button>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- ===== 数独 ===== -->
@@ -100,6 +111,17 @@
                     <div class="modal-actions">
                         <button id="switch-cancel" type="button" class="btn-ghost">取消</button>
                         <button id="switch-confirm" type="button">确认</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="snew-modal" class="settings-modal hidden">
+                <div class="settings-panel">
+                    <h2 class="settings-title">新游戏</h2>
+                    <p class="setting-note">将放弃当前难度的对局，开始新的一局。</p>
+                    <div class="modal-actions">
+                        <button id="snew-cancel" type="button" class="btn-ghost">取消</button>
+                        <button id="snew-confirm" type="button">确认</button>
                     </div>
                 </div>
             </div>

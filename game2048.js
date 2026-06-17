@@ -378,6 +378,13 @@ const KEYS = {
 };
 
 function handleKey(e) {
+    if (newModalOpen) {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeNewModal();
+        }
+        return;
+    }
     const dir = KEYS[e.key];
     if (!dir) return;
     e.preventDefault();
@@ -434,8 +441,31 @@ function handleSwipe(dx, dy) {
     }
 }
 
+const newModal = document.getElementById('g-new-modal');
+const newConfirm = document.getElementById('g-new-confirm');
+const newCancel = document.getElementById('g-new-cancel');
+let newModalOpen = false;
+
+function openNewModal() {
+    newModalOpen = true;
+    newModal.classList.remove('hidden');
+}
+
+function closeNewModal() {
+    newModalOpen = false;
+    newModal.classList.add('hidden');
+}
+
 undoBtn.addEventListener('click', undo);
-newBtn.addEventListener('click', newGame);
+newBtn.addEventListener('click', openNewModal);
+newConfirm.addEventListener('click', () => {
+    closeNewModal();
+    newGame();
+});
+newCancel.addEventListener('click', closeNewModal);
+newModal.addEventListener('click', (e) => {
+    if (e.target === newModal) closeNewModal();
+});
 overlayBtn.addEventListener('click', () => {
     if (overlayMode === 'won') {
         keepPlaying = true;

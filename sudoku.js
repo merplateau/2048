@@ -26,6 +26,9 @@ const switchDesc = document.getElementById('switch-desc');
 const optSave = document.getElementById('opt-save');
 const switchConfirm = document.getElementById('switch-confirm');
 const switchCancel = document.getElementById('switch-cancel');
+const newModal = document.getElementById('snew-modal');
+const newConfirm = document.getElementById('snew-confirm');
+const newCancel = document.getElementById('snew-cancel');
 
 const LEVELS = (window.SUDOKU_PUZZLES && window.SUDOKU_PUZZLES.levels) || [];
 const DEFAULT_LEVEL = 'easy';
@@ -45,6 +48,7 @@ let settingsOpen = false;
 let games = {};            // saved game per level key
 let pendingLevel = null;   // target level awaiting switch confirmation
 let switchOpen = false;
+let newOpen = false;       // new-game confirmation open
 
 /* ---------- index helpers ---------- */
 
@@ -296,11 +300,12 @@ function moveSelection(dr, dc) {
 
 function handleKey(e) {
     const k = e.key;
-    if (settingsOpen || switchOpen) {
+    if (settingsOpen || switchOpen || newOpen) {
         if (k === 'Escape') {
             e.preventDefault();
             if (settingsOpen) closeSettings();
-            else closeSwitch();
+            else if (switchOpen) closeSwitch();
+            else closeNewConfirm();
         }
         return;
     }
@@ -501,6 +506,16 @@ function closeSwitch() {
     switchModal.classList.add('hidden');
 }
 
+function openNewConfirm() {
+    newOpen = true;
+    newModal.classList.remove('hidden');
+}
+
+function closeNewConfirm() {
+    newOpen = false;
+    newModal.classList.add('hidden');
+}
+
 /* ---------- settings ---------- */
 
 function loadSettings() {
@@ -542,7 +557,15 @@ buildBoard();
 buildPad();
 buildDifficulty();
 
-newBtn.addEventListener('click', () => newPuzzle(level));
+newBtn.addEventListener('click', openNewConfirm);
+newConfirm.addEventListener('click', () => {
+    closeNewConfirm();
+    newPuzzle(level);
+});
+newCancel.addEventListener('click', closeNewConfirm);
+newModal.addEventListener('click', (e) => {
+    if (e.target === newModal) closeNewConfirm();
+});
 undoBtn.addEventListener('click', undo);
 eraseBtn.addEventListener('click', erase);
 notesBtn.addEventListener('click', toggleNotes);
