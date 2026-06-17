@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#f4f4f4">
+    <title>2048</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main id="app">
+        <header class="bar">
+            <h1>2048</h1>
+            <div class="scores">
+                <div class="score">
+                    <span class="score-label">分数</span>
+                    <span id="score" class="score-value">0</span>
+                </div>
+                <div class="score">
+                    <span class="score-label">最高</span>
+                    <span id="best" class="score-value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="controls">
+            <button id="undo-btn" type="button">撤回</button>
+            <button id="new-btn" type="button">新游戏</button>
+        </div>
+
+        <section id="board" class="board" aria-label="2048 棋盘">
+            <div id="grid" class="grid"></div>
+            <div id="tiles" class="tiles"></div>
+            <div id="overlay" class="overlay hidden">
+                <div id="overlay-text" class="overlay-text"></div>
+                <button id="overlay-btn" type="button"></button>
+            </div>
+        </section>
+
+        <p class="hint">方向键或滑动屏幕移动方块 · 相同数字合并</p>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

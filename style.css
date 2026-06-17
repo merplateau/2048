@@ -1,0 +1,245 @@
+:root {
+    color-scheme: light;
+    --bg: #f4f4f4;
+    --ink: #111;
+    --muted: #666;
+    --line: #cfcfcf;
+    --grid: #d6d2ca;
+    --cell: #e7e3db;
+    --active: #0f6bff;
+    --gap: 12px;
+    --radius: 4px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
+}
+
+#app {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px max(16px, env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom));
+}
+
+.bar {
+    width: var(--board-size, 460px);
+    max-width: calc(100vw - 32px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+h1 {
+    margin: 0;
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.scores {
+    display: flex;
+    gap: 8px;
+}
+
+.score {
+    display: grid;
+    place-items: center;
+    gap: 2px;
+    min-width: 64px;
+    padding: 6px 10px;
+    background: #fff;
+    border: 1px solid var(--line);
+}
+
+.score-label {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1;
+}
+
+.score-value {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.controls {
+    width: var(--board-size, 460px);
+    max-width: calc(100vw - 32px);
+    display: flex;
+    gap: 8px;
+}
+
+.controls button {
+    flex: 1;
+    height: 38px;
+    border: 1px solid #222;
+    background: #222;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.controls button:hover {
+    background: #000;
+}
+
+.controls button:disabled {
+    border-color: var(--line);
+    background: #e4e4e4;
+    color: #aaa;
+    cursor: default;
+}
+
+.board {
+    position: relative;
+    width: var(--board-size, 460px);
+    height: var(--board-size, 460px);
+    max-width: calc(100vw - 32px);
+    padding: var(--gap);
+    background: var(--grid);
+    border-radius: var(--radius);
+    touch-action: none;
+}
+
+.grid,
+.tiles {
+    position: absolute;
+    inset: var(--gap);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: var(--gap);
+}
+
+.grid-cell {
+    background: var(--cell);
+    border-radius: var(--radius);
+}
+
+.tiles {
+    pointer-events: none;
+}
+
+.tile {
+    position: absolute;
+    width: var(--tile-size);
+    height: var(--tile-size);
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: #fff;
+    color: var(--ink);
+    transition: transform 110ms ease;
+    will-change: transform;
+}
+
+.tile-inner {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.tile.new .tile-inner {
+    animation: appear 140ms ease;
+}
+
+.tile.merged .tile-inner {
+    animation: pop 140ms ease;
+}
+
+@keyframes appear {
+    from { transform: scale(0); }
+    to { transform: scale(1); }
+}
+
+@keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.16); }
+    100% { transform: scale(1); }
+}
+
+/* Tile palette — restrained warm-to-accent scale */
+.tile[data-v="2"]    { background: #eee9e0; }
+.tile[data-v="4"]    { background: #ece2cd; }
+.tile[data-v="8"]    { background: #e8b489; color: #fff; }
+.tile[data-v="16"]   { background: #e89a6e; color: #fff; }
+.tile[data-v="32"]   { background: #e57f63; color: #fff; }
+.tile[data-v="64"]   { background: #e35f3b; color: #fff; }
+.tile[data-v="128"]  { background: #e7c54f; color: #fff; }
+.tile[data-v="256"]  { background: #e7c143; color: #fff; }
+.tile[data-v="512"]  { background: #e6bb33; color: #fff; }
+.tile[data-v="1024"] { background: #2e9bd6; color: #fff; }
+.tile[data-v="2048"] { background: #0f6bff; color: #fff; }
+.tile[data-big="1"]  { background: #18171a; color: #fff; }
+
+.overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-content: center;
+    gap: 14px;
+    text-align: center;
+    background: rgba(244, 244, 244, 0.82);
+    border-radius: var(--radius);
+    backdrop-filter: blur(1px);
+}
+
+.overlay-text {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.overlay button {
+    justify-self: center;
+    height: 38px;
+    padding: 0 18px;
+    border: 1px solid #222;
+    background: #222;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+
+.overlay button:hover {
+    background: #000;
+}
+
+.hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.hidden {
+    display: none;
+}
