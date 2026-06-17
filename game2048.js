@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 const SIZE = 4;
@@ -281,7 +282,8 @@ function updateStatus() {
 }
 
 function updateButtons() {
-    undoBtn.disabled = history.length === 0 || overlayMode === 'over';
+    // undo stays available even after the game is over
+    undoBtn.disabled = history.length === 0;
 }
 
 /* ---------- persistence ---------- */
@@ -355,7 +357,7 @@ function newGame() {
 }
 
 function undo() {
-    if (!history.length || overlayMode === 'over') return;
+    if (!history.length) return;
     const prev = history.pop();
     clearTiles();
     loadCellsInto(prev.cells);
@@ -375,12 +377,12 @@ const KEYS = {
     W: 'up', D: 'right', S: 'down', A: 'left',
 };
 
-document.addEventListener('keydown', (e) => {
+function handleKey(e) {
     const dir = KEYS[e.key];
     if (!dir) return;
     e.preventDefault();
     move(dir);
-});
+}
 
 const board = document.getElementById('board');
 let touchX = 0;
@@ -466,3 +468,9 @@ layout();
 updateButtons();
 // restore the win/lose overlay if the saved game was already finished
 updateStatus();
+
+window.Game2048 = {
+    handleKey,
+    activate: layout,
+};
+})();

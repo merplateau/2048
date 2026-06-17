@@ -35,9 +35,56 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 20px max(16px, env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom));
+    justify-content: flex-start;
+    gap: 14px;
+    padding: clamp(16px, 4vh, 56px) max(16px, env(safe-area-inset-left)) calc(20px + env(safe-area-inset-bottom));
+}
+
+.view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+/* segmented controls (mode switch + difficulty) */
+.seg {
+    display: flex;
+    border: 1px solid var(--line);
+    background: #fff;
+}
+
+.seg button {
+    flex: 1;
+    height: 36px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+.seg button:last-child {
+    border-right: 0;
+}
+
+.seg button.active {
+    background: #222;
+    color: #fff;
+}
+
+.seg-mode {
+    width: 220px;
+}
+
+.seg-diff {
+    width: var(--board-size, 460px);
+    max-width: calc(100vw - 32px);
+}
+
+.seg-diff button {
+    font-size: 13px;
 }
 
 .bar {
@@ -242,4 +289,133 @@ h1 {
 
 .hidden {
     display: none;
+}
+
+/* ===================== Sudoku ===================== */
+
+.sboard {
+    position: relative;
+    width: var(--sboard-size, 460px);
+    height: var(--sboard-size, 460px);
+    max-width: calc(100vw - 32px);
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    background: #fff;
+    border: 2px solid #111;
+    touch-action: manipulation;
+}
+
+.scell {
+    display: grid;
+    place-items: center;
+    position: relative;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    font-size: var(--sval-size, 24px);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--active);
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.scell.tr { border-right: 2px solid #111; }
+.scell.tb { border-bottom: 2px solid #111; }
+.scell.nr { border-right: 0; }
+.scell.nb { border-bottom: 0; }
+
+.scell.given {
+    color: #111;
+    font-weight: 800;
+}
+
+/* highlight order: peer < same < sel so selection wins */
+.scell.peer { background: #eef1f5; }
+.scell.same { background: #d8e4fb; }
+.scell.sel  { background: #c4d8ff; }
+.scell.conflict { color: #e0301e; }
+
+.notes {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    pointer-events: none;
+}
+
+.notes span {
+    display: grid;
+    place-items: center;
+    font-size: var(--snote-size, 11px);
+    font-weight: 500;
+    line-height: 1;
+    color: #8a8a8a;
+}
+
+.pad {
+    width: var(--sboard-size, 460px);
+    max-width: calc(100vw - 32px);
+    display: flex;
+    gap: 5px;
+}
+
+.pad button {
+    flex: 1;
+    height: 52px;
+    min-width: 0;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #111;
+    font: inherit;
+    font-size: 22px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.pad button:hover {
+    background: #f0f0f0;
+}
+
+.pad button.done {
+    color: #c4c4c4;
+    background: #fafafa;
+}
+
+.sactions {
+    width: var(--sboard-size, 460px);
+    max-width: calc(100vw - 32px);
+    display: flex;
+    gap: 8px;
+}
+
+.sactions button {
+    flex: 1;
+    height: 40px;
+    border: 1px solid #222;
+    background: #fff;
+    color: #111;
+    font: inherit;
+    cursor: pointer;
+}
+
+.sactions button:hover {
+    background: #f0f0f0;
+}
+
+.sactions button.active {
+    background: #222;
+    color: #fff;
+}
+
+.sactions button:disabled {
+    border-color: var(--line);
+    color: #bbb;
+    cursor: default;
+    background: #fff;
 }
