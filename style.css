@@ -10,6 +10,7 @@
     --gap: 12px;
     --radius: 4px;
     --lock-fill: rgba(15, 107, 255, 0.16);
+    --dead-fill: rgba(224, 48, 30, 0.20);
 }
 
 * {
@@ -343,12 +344,16 @@ h1 {
 /* lock-hint shapes: drawn behind the cell contents */
 .scell.lock1::before,
 .scell.lock2::before,
-.scell.lock3::before {
+.scell.lock3::before,
+.scell.dead::before {
     content: "";
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    width: var(--lock-size, 22px);
+    height: var(--lock-size, 22px);
+    background: var(--lock-fill);
     pointer-events: none;
 }
 
@@ -357,26 +362,19 @@ h1 {
     z-index: 1;
 }
 
+/* 1 candidate → triangle, 2 → square, 3 → pentagon (square is the default box) */
 .scell.lock1::before {
-    width: var(--lock-size, 22px);
-    height: var(--lock-size, 22px);
-    border-radius: 50%;
-    background: var(--lock-fill);
-}
-
-.scell.lock2::before {
-    width: calc(var(--lock-size, 22px) * 0.9);
-    height: calc(var(--lock-size, 22px) * 0.9);
-    background: var(--lock-fill);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
 }
 
 .scell.lock3::before {
-    width: 0;
-    height: 0;
-    border-left: calc(var(--lock-size, 22px) * 0.55) solid transparent;
-    border-right: calc(var(--lock-size, 22px) * 0.55) solid transparent;
-    border-bottom: calc(var(--lock-size, 22px) * 0.95) solid var(--lock-fill);
-    transform: translate(-50%, -40%);
+    clip-path: polygon(50% 0%, 97.5% 34.5%, 79.4% 90.5%, 20.6% 90.5%, 2.5% 34.5%);
+}
+
+/* no legal digit fits → red triangle */
+.scell.dead::before {
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    background: var(--dead-fill);
 }
 
 .scell .notes {

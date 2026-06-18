@@ -20,6 +20,7 @@ const settingsBtn = document.getElementById('sudoku-settings');
 const settingsModal = document.getElementById('settings');
 const settingsDone = document.getElementById('settings-done');
 const optLock = document.getElementById('opt-lock');
+const optDead = document.getElementById('opt-dead');
 const optItalic = document.getElementById('opt-italic');
 const switchModal = document.getElementById('switch-modal');
 const switchDesc = document.getElementById('switch-desc');
@@ -43,7 +44,7 @@ let level;        // current level key
 let solved;
 let history;      // [{ values, notes }]
 let cellEls = [];
-let settings = { lockHint: false, italicClues: false };
+let settings = { lockHint: false, markDead: false, italicClues: false };
 let settingsOpen = false;
 let games = {};            // saved game per level key
 let pendingLevel = null;   // target level awaiting switch confirmation
@@ -187,12 +188,13 @@ function render() {
         if (selVal && values[i] === selVal) cls += ' same';
         if (i === selected) cls += ' sel';
         if (bad.has(i)) cls += ' conflict';
-        // lock hint: empty cells with very few legal candidates
-        if (settings.lockHint && !values[i] && !given[i]) {
+        // candidate-based hints on empty cells (recomputed every render)
+        if ((settings.lockHint || settings.markDead) && !values[i] && !given[i]) {
             const n = candidateCount(i, used);
-            if (n === 1) cls += ' lock1';
-            else if (n === 2) cls += ' lock2';
-            else if (n === 3) cls += ' lock3';
+            if (settings.markDead && n === 0) cls += ' dead';
+            else if (settings.lockHint && n === 1) cls += ' lock1';
+            else if (settings.lockHint && n === 2) cls += ' lock2';
+            else if (settings.lockHint && n === 3) cls += ' lock3';
         }
         el.className = cls;
 
@@ -257,14 +259,7 @@ function inputDigit(d) {
     if (values[selected] === d) return; // no change
     snapshot();
     values[selected] = d;
-    notes[selected] = [];
-    // auto-remove this digit from peers' pencil marks
-    for (let j = 0; j < N; j++) {
-        if (arePeers(selected, j) && notes[j].length) {
-            const k = notes[j].indexOf(d);
-            if (k >= 0) notes[j].splice(k, 1);
-        }
-    }
+    // keep this cell's pencil marks so erasing the digit restores them
     render();
     save();
     checkWin();
@@ -272,10 +267,16 @@ function inputDigit(d) {
 
 function erase() {
     if (selected < 0 || given[selected] || solved) return;
-    if (!values[selected] && !notes[selected].length) return;
-    snapshot();
-    values[selected] = 0;
-    notes[selected] = [];
+    if (values[selected]) {
+        // remove the digit first — any kept pencil marks reappear
+        snapshot();
+        values[selected] = 0;
+    } else if (notes[selected].length) {
+        snapshot();
+        notes[selected] = [];
+    } else {
+        return;
+    }
     render();
     save();
 }
@@ -521,7 +522,7 @@ function closeNewConfirm() {
 function loadSettings() {
     try {
         const s = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-        if (s) settings = { lockHint: !!s.lockHint, italicClues: !!s.italicClues };
+        if (s) settings = { lockHint: !!s.lockHint, markDead: !!s.markDead, italicClues: !!s.italicClues };
     } catch (e) {
         /* ignore */
     }
@@ -537,6 +538,7 @@ function saveSettings() {
 
 function applySettings() {
     optLock.checked = settings.lockHint;
+    optDead.checked = settings.markDead;
     optItalic.checked = settings.italicClues;
     boardEl.classList.toggle('italic-clues', settings.italicClues);
 }
@@ -578,6 +580,11 @@ settingsModal.addEventListener('click', (e) => {
 });
 optLock.addEventListener('change', () => {
     settings.lockHint = optLock.checked;
+    saveSettings();
+    render();
+});
+optDead.addEventListener('change', () => {
+    settings.markDead = optDead.checked;
     saveSettings();
     render();
 });
